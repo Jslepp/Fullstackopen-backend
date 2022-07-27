@@ -13,25 +13,10 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message)
-
-  if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
-  }
-
-  next(error)
-}
-
-app.use(errorHandler)
-
-app.use(express.static('build'))
-
-app.use(requestLogger)
 
 app.use(cors())
 
-app.use(express.json())
+
 
 app.use(morgan(function (tokens, req, res) {
     return [
@@ -77,6 +62,10 @@ app.use(morgan(function (tokens, req, res) {
   
     res.status(204).end()
   })
+
+  app.use(express.static('build'))
+  app.use(express.json())
+  app.use(requestLogger)
   
   app.post('/api/persons', (req,res) => {
     const body = req.body
@@ -113,6 +102,18 @@ app.use(morgan(function (tokens, req, res) {
   
   app.use(unknownEndpoint)
   
+  const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+  
+    if (error.name === 'CastError') {
+      return response.status(400).send({ error: 'malformatted id' })
+    }
+  
+    next(error)
+  }
+  
+  app.use(errorHandler)
+
 
   const PORT = process.env.PORT
   app.listen(PORT, () => {
