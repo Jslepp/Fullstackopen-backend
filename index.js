@@ -1,13 +1,26 @@
-const { response } = require('express')
+require('dotenv').config()
 const express = require('express')
 const app = express()
+const Person = require('./models/person')
 var morgan = require('morgan')
 const cors = require('cors')
+
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:  ', request.path)
+  console.log('Body:  ', request.body)
+  console.log('---')
+  next()
+}
+
 app.use(express.static('build'))
+
+app.use(requestLogger)
 
 app.use(cors())
 
 app.use(express.json())
+
 app.use(morgan(function (tokens, req, res) {
     return [
       tokens.method(req, res),
@@ -48,7 +61,10 @@ let persons = [
   })
   
   app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(persons => {
+      res.json(persons)
+    })
+    
   })
   app.get('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
@@ -92,14 +108,22 @@ let persons = [
             error: 'name must be unique'
         })
     }
-    const person = {
+    const person = new Person( {
         name: body.name,
         number: body.number,
         id:  Math.floor(Math.random()*10000000)
-    }
-    persons = persons.concat(person)
-    res.json(person)
+    })
+    person.save().then(savedPerson => {
+      res.json(savedPerson)
+    })
   })
+
+  const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+  }
+  
+  app.use(unknownEndpoint)
+  
 
   const PORT = process.env.PORT || 3001
   app.listen(PORT, () => {
