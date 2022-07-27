@@ -13,6 +13,17 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 app.use(express.static('build'))
 
@@ -43,19 +54,16 @@ app.use(morgan(function (tokens, req, res) {
     })
     
   })
-  app.get('/api/persons/:id', (req, res) => {
+  app.get('/api/persons/:id', (req, res, next) => {
     Person.findById(req.params.id)
     .then(person => {
       if (person) {
-        response.json(person)
+        res.json(person)
       } else {
-        response.status(404).end()
+        res.status(404).end()
       }
     })
-    .catch(error => {
-      console.log(error)
-      response.status(500).end()
-    })
+    .catch(error => next(error))
   })
 
   app.get('/info', (req, res) => {
