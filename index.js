@@ -4,6 +4,7 @@ const app = express()
 const Person = require('./models/person')
 var morgan = require('morgan')
 const cors = require('cors')
+const person = require('./models/person')
 
 const requestLogger = (request, response, next) => {
   console.log('Method:', request.method)
@@ -32,30 +33,6 @@ app.use(morgan(function (tokens, req, res) {
     ].join(' ')
   }))
 
-
-let persons = [
-    {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: 1
-    },
-    {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: 2
-    },
-    {
-    name: "Dan Abramov",
-    number: "12-43-234345",
-    id: 3
-    },
-    {
-    name: "Santeri Leppä",
-    number: "4320098402",
-    id: 4
-    }
-]
-
   app.get('/', (req, res) => {
     res.send('<h1>Hello World!</h1>')
   })
@@ -67,14 +44,18 @@ let persons = [
     
   })
   app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
-
-    if (person) {
-        res.json(person)
-    } else {
-        res.status(404).end()
-    }
+    Person.findById(req.params.id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => {
+      console.log(error)
+      response.status(500).end()
+    })
   })
 
   app.get('/info', (req, res) => {
@@ -125,7 +106,7 @@ let persons = [
   app.use(unknownEndpoint)
   
 
-  const PORT = process.env.PORT || 3001
+  const PORT = process.env.PORT
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
   })
